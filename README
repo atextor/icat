@@ -6,5 +6,5 @@ icat depends on imlib2.
 On Ubuntu, apt-get install libimlib2-dev
 
 To compile:
-gcc -Wall -pedantic -std=c99 -o icat icat.c -lImlib2
+make
 
