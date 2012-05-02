@@ -29,11 +29,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
 #include <getopt.h>
+#include <unistd.h>
 #include <Imlib2.h>
 
-#define VERSION "0.1"
+#define VERSION "0.2"
 
 static uint32_t colors[] = {
 	// Colors 0 to 15: original ANSI colors
@@ -99,10 +101,17 @@ void print_usage() {
 			"	-h | --help  -- Display this message\n"
 			"	-x value     -- Specify the column to print the image in (min. 1)\n"
 			"	-y value     -- Specify the row to print the image in (min 1.)\n"
-			"	imagefile    -- The image to print\n");
+			"	imagefile    -- The image to print. If the file name is \"-\", the file is\n"
+			"	                read from stdin.\n"
+			"Note that big images are not resized to your terminal size. If you want that,\n"
+			"you can use resize (from the ImageMagick package):\n"
+			"	convert -resize $((COLUMNS - 2))x image.png - | icat -\n"
+			"or even from another source:\n"
+			"	curl -sL http://example.com/image.png | convert -resize $((COLUMNS - 2))x - - | icat -\n");
 }
 
 int main(int argc, char* argv[]) {
+	char *filename;
 	char *px = "▄";
 	static int display_help = 0;
 	Imlib_Image image = NULL;
@@ -156,7 +165,27 @@ int main(int argc, char* argv[]) {
 		exit(0);
 	}
 
-	image = imlib_load_image(argv[optind]);
+	// Read from stdin and write temp file. Although a temp file
+	// is ugly, imlib can not seek in a pipe and therefore not
+	// read an image from it.
+	if (strcmp(argv[optind], "-") == 0) {
+		int tempfile;
+		char tempfile_name[] = "/tmp/icatXXXXXX";
+		if ((tempfile = mkstemp(tempfile_name)) < 0) {
+			perror("mkstemp");
+			exit(EXIT_FAILURE);
+		}
+		filename = tempfile_name;
+		char buf;
+		ssize_t numbytes;
+		while ((numbytes = read(0, &buf, 1)) > 0) {
+			write(tempfile, &buf, 1);
+		}
+	} else {
+		filename = argv[optind];
+	}
+
+	image = imlib_load_image_immediately_without_cache(filename);
 	if (!image) {
 		fprintf(stderr, "Could not load image: %s\n", argv[optind]);
 		exit(EXIT_FAILURE);
