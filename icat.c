@@ -29,8 +29,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
 #include <getopt.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
@@ -98,16 +99,18 @@ uint8_t rgb2xterm(Imlib_Color* pixel) {
 
 void print_usage() {
 	printf("icat (" VERSION ") outputs an image on a 256-color enabled terminal with UTF-8 locale.\n"
-			"Usage: icat [-h|--help] [-x value] [-y value] imagefile\n"
+			"Usage: icat [-h|--help] [-x value] [-y value] [-k|--keep] imagefile\n"
 			"	-h | --help  -- Display this message\n"
 			"	-x value     -- Specify the column to print the image in (min. 1)\n"
 			"	-y value     -- Specify the row to print the image in (min 1.)\n"
+			"	-k | --keep  -- Keep image size, i.e. do not automatically resize image to fit\n"
+			"	                the terminal width.\n"
 			"	imagefile    -- The image to print. If the file name is \"-\", the file is\n"
 			"	                read from stdin.\n"
-			"Note that big images are not resized to your terminal size. If you want that,\n"
-			"you can use resize (from the ImageMagick package):\n"
+			"Big images are automatically resized to your terminal width, unless with the -k option.\n"
+			"You can achieve the same effect with convert (from the ImageMagick package):\n"
 			"	convert -resize $((COLUMNS - 2))x image.png - | icat -\n"
-			"or even from another source:\n"
+			"Or read images from another source:\n"
 			"	curl -sL http://example.com/image.png | convert -resize $((COLUMNS - 2))x - - | icat -\n");
 }
 
@@ -136,16 +139,18 @@ int main(int argc, char* argv[]) {
 	unsigned int x = 0;
 	unsigned int y = 0;
 	int c;
+	bool keep_size = false;
 
 	for(;;) {
 		static struct option long_options[] = {
-			{"h",    no_argument,       &display_help, 1},
+			{"help", no_argument,       &display_help, 1},
 			{"x",    required_argument, 0, 'x'},
 			{"y",    required_argument, 0, 'y'},
+			{"keep", no_argument,       0, 'k'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long (argc, argv, "hx:y:", long_options, NULL);
+		c = getopt_long(argc, argv, "hx:y:k", long_options, NULL);
 
 		if (c == -1)
 			break;
@@ -167,12 +172,18 @@ int main(int argc, char* argv[]) {
 
 			case 'h':
 				display_help = 1;
+				break;
+
+			case 'k':
+				keep_size = true;
+				break;
 
 			case '?':
 				break;
 
 			default:
-				abort();
+				display_help = 1;
+				break;
 		}
 	}
 
@@ -212,21 +223,23 @@ int main(int argc, char* argv[]) {
 	int height = imlib_image_get_height();
 
 	// Find out terminal size and resize image to fit, if necessary
-	int cols = terminal_width();
-	if (cols < width - 1) {
-		int resized_width = cols - 1;
-		int resized_height = (int)(height * ((float)resized_width / width)); 
-		Imlib_Image resized_image = imlib_create_image(resized_width,
-				resized_height);
-		imlib_context_set_image(resized_image);
-		imlib_blend_image_onto_image(image, 1, 0, 0, width, height, 0, 0,
-				resized_width, resized_height);
-		width = resized_width;
-		height = resized_height;
-		imlib_context_set_image(image);
-		imlib_free_image_and_decache();
-		image = resized_image;
-		imlib_context_set_image(image);
+	if (!keep_size) {
+		int cols = terminal_width();
+		if (cols < width - 1) {
+			int resized_width = cols - 1;
+			int resized_height = (int)(height * ((float)resized_width / width)); 
+			Imlib_Image resized_image = imlib_create_image(resized_width,
+					resized_height);
+			imlib_context_set_image(resized_image);
+			imlib_blend_image_onto_image(image, 1, 0, 0, width, height, 0, 0,
+					resized_width, resized_height);
+			width = resized_width;
+			height = resized_height;
+			imlib_context_set_image(image);
+			imlib_free_image_and_decache();
+			image = resized_image;
+			imlib_context_set_image(image);
+		}
 	}
 
 	// If an y-value is given, position the cursor in that line (and
