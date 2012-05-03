@@ -33,6 +33,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <Imlib2.h>
 
 #define VERSION "0.2"
@@ -110,6 +111,21 @@ void print_usage() {
 			"	curl -sL http://example.com/image.png | convert -resize $((COLUMNS - 2))x - - | icat -\n");
 }
 
+// Find out and return the number of columns in the terminal
+int terminal_width() {
+	int cols = 80;
+#ifdef TIOCGSIZE
+	struct ttysize ts;
+	ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
+	cols = ts.ts_cols;
+#elif defined(TIOCGWINSZ)
+	struct winsize ts;
+	ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
+	cols = ts.ws_col;
+#endif /* TIOCGSIZE */
+	return cols;
+}
+
 int main(int argc, char* argv[]) {
 	char *filename;
 	char *px = "▄";
@@ -177,23 +193,41 @@ int main(int argc, char* argv[]) {
 		}
 		filename = tempfile_name;
 		char buf;
-		ssize_t numbytes;
-		while ((numbytes = read(0, &buf, 1)) > 0) {
+		while (read(0, &buf, 1) > 0) {
 			write(tempfile, &buf, 1);
 		}
 	} else {
 		filename = argv[optind];
 	}
 
-	image = imlib_load_image_immediately_without_cache(filename);
+	// Load image
+	image = imlib_load_image_immediately(filename);
 	if (!image) {
-		fprintf(stderr, "Could not load image: %s\n", argv[optind]);
+		fprintf(stderr, "Could not load image: %s\n", filename);
 		exit(EXIT_FAILURE);
 	}
 
 	imlib_context_set_image(image);
 	int width = imlib_image_get_width();
 	int height = imlib_image_get_height();
+
+	// Find out terminal size and resize image to fit, if necessary
+	int cols = terminal_width();
+	if (cols < width - 1) {
+		int resized_width = cols - 1;
+		int resized_height = (int)(height * ((float)resized_width / width)); 
+		Imlib_Image resized_image = imlib_create_image(resized_width,
+				resized_height);
+		imlib_context_set_image(resized_image);
+		imlib_blend_image_onto_image(image, 1, 0, 0, width, height, 0, 0,
+				resized_width, resized_height);
+		width = resized_width;
+		height = resized_height;
+		imlib_context_set_image(image);
+		imlib_free_image_and_decache();
+		image = resized_image;
+		imlib_context_set_image(image);
+	}
 
 	// If an y-value is given, position the cursor in that line (and
 	// given or default column)
@@ -220,6 +254,7 @@ int main(int argc, char* argv[]) {
 		printf("\x1b[0m\n");
 	}
 
+	imlib_free_image_and_decache();
 	return 0;
 }
 
