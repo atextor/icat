@@ -1,0 +1,9 @@
+Version 0.1:
+	First version
+Version 0.2:
+	Added ability to read images from stdin
+Version 0.3:
+	Automatically resizes big images to terminal width
+	Added -k|--keep option to prevent automatic resizing
+	Support for transparency in images
+

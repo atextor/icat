@@ -2,29 +2,30 @@
 icat -- Outputs an image on a 256-color enabled terminal with UTF-8 locale
 Andreas Textor <textor.andreas@googlemail.com>
 
-Compile: gcc -Wall -pedantic -std=c99 -o icat icat.c -lImlib2
+Compile: gcc -Wall -pedantic -std=c99 -D_BSD_SOURCE -o icat icat.c -lImlib2
 
-Copyright 2010 Andreas Textor. All rights reserved.
+Copyright (c) 2012 Andreas Textor. All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, are
-permitted provided that the following conditions are met:
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
-   1. Redistributions of source code must retain the above copyright notice, this list of
-      conditions and the following disclaimer.
+   1. Redistributions of source code must retain the above copyright notice, this
+      list of conditions and the following disclaimer.
 
-   2. Redistributions in binary form must reproduce the above copyright notice, this list
-      of conditions and the following disclaimer in the documentation and/or other materials
-      provided with the distribution.
+   2. Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
 
-THIS SOFTWARE IS PROVIDED BY Andreas Textor ``AS IS'' AND ANY EXPRESS OR IMPLIED
-WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL Andreas Textor OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdio.h>
@@ -37,7 +38,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/ioctl.h>
 #include <Imlib2.h>
 
-#define VERSION "0.2"
+#define VERSION "0.3"
 
 static uint32_t colors[] = {
 	// Colors 0 to 15: original ANSI colors
@@ -129,13 +130,35 @@ int terminal_width() {
 	return cols;
 }
 
+// Prints two pixels inside one character, p1 below p2.
+// Characters in terminal fonts are usually twice as high
+// as they are wide.
+void print_pixels(Imlib_Color* p1, Imlib_Color* p2) {
+	static char* upper = "▀";
+	static char* lower = "▄";
+	if (p1->alpha == 0 && p2->alpha == 0) {
+		// Both pixels are transparent
+		printf(" ");
+	} else if (p1->alpha == 0 && p2->alpha != 0) {
+		// Only lower pixel is transparent
+		uint8_t col2 = rgb2xterm(p2);
+		printf("\x1b[0m\x1b[38;5;%dm%s", col2, upper);
+	} else if (p1->alpha != 0 && p2->alpha == 0) {
+		// Only upper pixel is transparent
+		uint8_t col1 = rgb2xterm(p1);
+		printf("\x1b[0m\x1b[38;5;%dm%s", col1, lower);
+	} else {
+		// Both pixels are opaque
+		uint8_t col1 = rgb2xterm(p1);
+		uint8_t col2 = rgb2xterm(p2);
+		printf("\x1b[38;5;%dm\x1b[48;5;%dm%s", col1, col2, lower);
+	}
+}
+
 int main(int argc, char* argv[]) {
 	char *filename;
-	char *px = "▄";
 	static int display_help = 0;
 	Imlib_Image image = NULL;
-	Imlib_Color pixel;
-	uint8_t col1, col2;
 	unsigned int x = 0;
 	unsigned int y = 0;
 	int c;
@@ -248,6 +271,8 @@ int main(int argc, char* argv[]) {
 		printf("\x1b[%d;%dH", y, x);
 	}
 	
+	Imlib_Color pixel1;
+	Imlib_Color pixel2;
 	for (int h = 0; h < height; h += 2) {
 		// If an x-offset is given, position the cursor in that column
 		if (x > 0) {
@@ -258,11 +283,9 @@ int main(int argc, char* argv[]) {
 		// pixel lines in order to keep the pixels square (most console
 		// fonts have two times the height for the width of each character)
 		for (int w = 0; w < width; w++) {
-			imlib_image_query_pixel(w, h + 1, &pixel);
-			col1 = rgb2xterm(&pixel);
-			imlib_image_query_pixel(w, h, &pixel);
-			col2 = rgb2xterm(&pixel);
-			printf("\x1b[38;5;%dm\x1b[48;5;%dm%s", col1, col2, px);
+			imlib_image_query_pixel(w, h + 1, &pixel1);
+			imlib_image_query_pixel(w, h, &pixel2);
+			print_pixels(&pixel1, &pixel2);
 		}
 		printf("\x1b[0m\n");
 	}
