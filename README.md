@@ -10,14 +10,18 @@ Build requirements: icat depends on imlib2.
 On Ubuntu, apt-get install libimlib2-dev.
 
 To compile:
+
 	make
 
 Running
 -------
 
 Run icat with a local file:
+
 	icat sample.png
+
 or, if - is used as as file name, it reads from stdin:
+
 	curl -sL https://raw.github.com/atextor/icat/master/sample.png | icat -
 
 The above commands would create the following output (note that you
