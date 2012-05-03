@@ -251,17 +251,12 @@ int main(int argc, char* argv[]) {
 		if (cols < width - 1) {
 			int resized_width = cols - 1;
 			int resized_height = (int)(height * ((float)resized_width / width)); 
-			Imlib_Image resized_image = imlib_create_image(resized_width,
-					resized_height);
+			Imlib_Image resized_image = imlib_create_cropped_scaled_image(0, 0,
+					width, height, resized_width, resized_height);
+			imlib_free_image_and_decache();
 			imlib_context_set_image(resized_image);
-			imlib_blend_image_onto_image(image, 1, 0, 0, width, height, 0, 0,
-					resized_width, resized_height);
 			width = resized_width;
 			height = resized_height;
-			imlib_context_set_image(image);
-			imlib_free_image_and_decache();
-			image = resized_image;
-			imlib_context_set_image(image);
 		}
 	}
 
