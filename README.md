@@ -20,6 +20,10 @@ Run icat with a local file:
 
 	icat sample.png
 
+or with multiple files:
+
+	icat img1.jpg img2.jpg > newfile.txt
+
 or, if - is used as as file name, it reads from stdin:
 
 	curl -sL https://raw.github.com/atextor/icat/master/sample.png | icat -

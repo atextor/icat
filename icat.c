@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/ioctl.h>
 #include <Imlib2.h>
 
-#define VERSION "0.3"
+#define VERSION "0.3.1"
 
 static uint32_t colors[] = {
 	// Colors 0 to 15: original ANSI colors
@@ -100,10 +100,11 @@ uint8_t rgb2xterm(Imlib_Color* pixel) {
 
 void print_usage() {
 	printf("icat (" VERSION ") outputs an image on a 256-color enabled terminal with UTF-8 locale.\n"
-			"Usage: icat [-h|--help] [-x value] [-y value] [-k|--keep] imagefile\n"
+			"Usage: icat [-h|--help] [-x value] [-y value] [-k|--keep] imagefile [imagefile...]\n"
 			"	-h | --help  -- Display this message\n"
 			"	-x value     -- Specify the column to print the image in (min. 1)\n"
 			"	-y value     -- Specify the row to print the image in (min 1.)\n"
+			"	                This is ignored when more than one image is printed.\n"
 			"	-k | --keep  -- Keep image size, i.e. do not automatically resize image to fit\n"
 			"	                the terminal width.\n"
 			"	imagefile    -- The image to print. If the file name is \"-\", the file is\n"
@@ -210,82 +211,89 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if (display_help == 1 || optind == argc || optind < argc - 1) {
+	if (display_help == 1 || optind == argc) {
 		print_usage();
 		exit(0);
 	}
 
-	// Read from stdin and write temp file. Although a temp file
-	// is ugly, imlib can not seek in a pipe and therefore not
-	// read an image from it.
-	if (strcmp(argv[optind], "-") == 0) {
-		int tempfile;
-		char tempfile_name[] = "/tmp/icatXXXXXX";
-		if ((tempfile = mkstemp(tempfile_name)) < 0) {
-			perror("mkstemp");
+	// Ignore y value when more than one picture is printed
+	if (argc - optind > 1) {
+		y = 0;
+	}
+
+	for (int i = optind; i < argc; i++) {
+		// Read from stdin and write temp file. Although a temp file
+		// is ugly, imlib can not seek in a pipe and therefore not
+		// read an image from it.
+		if (strcmp(argv[i], "-") == 0) {
+			int tempfile;
+			char tempfile_name[] = "/tmp/icatXXXXXX";
+			if ((tempfile = mkstemp(tempfile_name)) < 0) {
+				perror("mkstemp");
+				exit(EXIT_FAILURE);
+			}
+			filename = tempfile_name;
+			char buf;
+			while (read(0, &buf, 1) > 0) {
+				write(tempfile, &buf, 1);
+			}
+		} else {
+			filename = argv[i];
+		}
+
+		// Load image
+		image = imlib_load_image_immediately(filename);
+		if (!image) {
+			fprintf(stderr, "Could not load image: %s\n", filename);
 			exit(EXIT_FAILURE);
 		}
-		filename = tempfile_name;
-		char buf;
-		while (read(0, &buf, 1) > 0) {
-			write(tempfile, &buf, 1);
-		}
-	} else {
-		filename = argv[optind];
-	}
 
-	// Load image
-	image = imlib_load_image_immediately(filename);
-	if (!image) {
-		fprintf(stderr, "Could not load image: %s\n", filename);
-		exit(EXIT_FAILURE);
-	}
+		imlib_context_set_image(image);
+		int width = imlib_image_get_width();
+		int height = imlib_image_get_height();
 
-	imlib_context_set_image(image);
-	int width = imlib_image_get_width();
-	int height = imlib_image_get_height();
-
-	// Find out terminal size and resize image to fit, if necessary
-	if (!keep_size) {
-		int cols = terminal_width();
-		if (cols < width - 1) {
-			int resized_width = cols - 1;
-			int resized_height = (int)(height * ((float)resized_width / width)); 
-			Imlib_Image resized_image = imlib_create_cropped_scaled_image(0, 0,
-					width, height, resized_width, resized_height);
-			imlib_free_image_and_decache();
-			imlib_context_set_image(resized_image);
-			width = resized_width;
-			height = resized_height;
-		}
-	}
-
-	// If an y-value is given, position the cursor in that line (and
-	// given or default column)
-	if (y > 0) {
-		printf("\x1b[%d;%dH", y, x);
-	}
-	
-	Imlib_Color pixel1;
-	Imlib_Color pixel2;
-	for (int h = 0; h < height; h += 2) {
-		// If an x-offset is given, position the cursor in that column
-		if (x > 0) {
-			printf("\x1b[%dG", x);
+		// Find out terminal size and resize image to fit, if necessary
+		if (!keep_size) {
+			int cols = terminal_width();
+			if (cols < width - 1) {
+				int resized_width = cols - 1;
+				int resized_height = (int)(height * ((float)resized_width / width)); 
+				Imlib_Image resized_image = imlib_create_cropped_scaled_image(0, 0,
+						width, height, resized_width, resized_height);
+				imlib_free_image_and_decache();
+				imlib_context_set_image(resized_image);
+				width = resized_width;
+				height = resized_height;
+			}
 		}
 
-		// Draw a horizontal line. Each console line consists of two
-		// pixel lines in order to keep the pixels square (most console
-		// fonts have two times the height for the width of each character)
-		for (int w = 0; w < width; w++) {
-			imlib_image_query_pixel(w, h + 1, &pixel1);
-			imlib_image_query_pixel(w, h, &pixel2);
-			print_pixels(&pixel1, &pixel2);
+		// If an y-value is given, position the cursor in that line (and
+		// given or default column)
+		if (y > 0) {
+			printf("\x1b[%d;%dH", y, x);
 		}
-		printf("\x1b[0m\n");
-	}
+		
+		Imlib_Color pixel1;
+		Imlib_Color pixel2;
+		for (int h = 0; h < height; h += 2) {
+			// If an x-offset is given, position the cursor in that column
+			if (x > 0) {
+				printf("\x1b[%dG", x);
+			}
 
-	imlib_free_image_and_decache();
+			// Draw a horizontal line. Each console line consists of two
+			// pixel lines in order to keep the pixels square (most console
+			// fonts have two times the height for the width of each character)
+			for (int w = 0; w < width; w++) {
+				imlib_image_query_pixel(w, h + 1, &pixel1);
+				imlib_image_query_pixel(w, h, &pixel2);
+				print_pixels(&pixel1, &pixel2);
+			}
+			printf("\x1b[0m\n");
+		}
+
+		imlib_free_image_and_decache();
+	}
 	return 0;
 }
 
