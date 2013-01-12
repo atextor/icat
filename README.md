@@ -1,6 +1,6 @@
 icat - image cat
 ================
-Outputs an image on a 256-color enabled terminal with UTF-8 locale,
+Outputs an image on a 256-color or 24-bit color enabled terminal with UTF-8 locale,
 such as gnome-terminal, konsole or rxvt-unicode (urxvt).
 
 Building

@@ -40,6 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define VERSION "0.3.1"
 
+enum {MODE_NOTHING, MODE_INDEXED, MODE_24_BIT, MODE_BOTH};
+
 static uint32_t colors[] = {
 	// Colors 0 to 15: original ANSI colors
 	0x000000, 0xcd0000, 0x00cd00, 0xcdcd00, 0x0000ee, 0xcd00cd, 0x00cdcd, 0xe5e5e5,
@@ -99,7 +101,7 @@ uint8_t rgb2xterm(Imlib_Color* pixel) {
 }
 
 void print_usage() {
-	printf("icat (" VERSION ") outputs an image on a 256-color enabled terminal with UTF-8 locale.\n"
+	printf("icat (" VERSION ") outputs an image on a 256-color or 24-bit color enabled terminal with UTF-8 locale.\n"
 			"Usage: icat [-h|--help] [-x value] [-y value] [-k|--keep] imagefile [imagefile...]\n"
 			"	-h | --help  -- Display this message\n"
 			"	-x value     -- Specify the column to print the image in (min. 1)\n"
@@ -107,6 +109,8 @@ void print_usage() {
 			"	                This is ignored when more than one image is printed.\n"
 			"	-k | --keep  -- Keep image size, i.e. do not automatically resize image to fit\n"
 			"	                the terminal width.\n"
+			"	-m | --mode indexed|24bit|both\n"
+			"	             -- Use indexed (256-color), 24-bit color, or both (the default).\n"
 			"	imagefile    -- The image to print. If the file name is \"-\", the file is\n"
 			"	                read from stdin.\n"
 			"Big images are automatically resized to your terminal width, unless with the -k option.\n"
@@ -134,7 +138,9 @@ int terminal_width() {
 // Prints two pixels inside one character, p1 below p2.
 // Characters in terminal fonts are usually twice as high
 // as they are wide.
-void print_pixels(Imlib_Color* p1, Imlib_Color* p2) {
+void print_pixels(Imlib_Color* p1, Imlib_Color* p2, int mode) {
+	// Newer xterms should support 24-bit color with the ESC[38;2;<r>;<g>;<b>m sequence.
+	// For backward compatibility, we insert the old ESC[38;5;<color_index>m before it.
 	static char* upper = "▀";
 	static char* lower = "▄";
 	if (p1->alpha == 0 && p2->alpha == 0) {
@@ -142,17 +148,37 @@ void print_pixels(Imlib_Color* p1, Imlib_Color* p2) {
 		printf(" ");
 	} else if (p1->alpha == 0 && p2->alpha != 0) {
 		// Only lower pixel is transparent
-		uint8_t col2 = rgb2xterm(p2);
-		printf("\x1b[0m\x1b[38;5;%dm%s", col2, upper);
+		fputs("\x1b[0m", stdout);
+		if(mode & MODE_INDEXED) {
+			uint8_t col2 = rgb2xterm(p2);
+			printf("\x1b[38;5;%dm", col2);
+		}
+		if(mode & MODE_24_BIT) {
+			printf("\x1b[38;2;%d;%d;%dm", p2->red, p2->green, p2->blue);
+		}
+		fputs(upper, stdout);
 	} else if (p1->alpha != 0 && p2->alpha == 0) {
 		// Only upper pixel is transparent
-		uint8_t col1 = rgb2xterm(p1);
-		printf("\x1b[0m\x1b[38;5;%dm%s", col1, lower);
+		fputs("\x1b[0m", stdout);
+		if(mode & MODE_INDEXED) {
+			uint8_t col1 = rgb2xterm(p1);
+			printf("\x1b[38;5;%dm", col1);
+		}
+		if(mode & MODE_24_BIT) {
+			printf("\x1b[38;2;%d;%d;%dm", p1->red, p1->green, p1->blue);
+		}
+		fputs(lower, stdout);
 	} else {
 		// Both pixels are opaque
-		uint8_t col1 = rgb2xterm(p1);
-		uint8_t col2 = rgb2xterm(p2);
-		printf("\x1b[38;5;%dm\x1b[48;5;%dm%s", col1, col2, lower);
+		if(mode & MODE_INDEXED) {
+			uint8_t col1 = rgb2xterm(p1);
+			uint8_t col2 = rgb2xterm(p2);
+			printf("\x1b[38;5;%dm\x1b[48;5;%dm", col1, col2);
+		}
+		if(mode & MODE_24_BIT) {
+			printf("\x1b[38;2;%d;%d;%dm\x1b[48;2;%d;%d;%dm", p1->red, p1->green, p1->blue, p2->red, p2->green, p2->blue);
+		}
+		fputs(lower, stdout);
 	}
 }
 
@@ -164,6 +190,7 @@ int main(int argc, char* argv[]) {
 	unsigned int y = 0;
 	int c;
 	bool keep_size = false;
+	int mode = MODE_BOTH;
 
 	for(;;) {
 		static struct option long_options[] = {
@@ -171,10 +198,11 @@ int main(int argc, char* argv[]) {
 			{"x",    required_argument, 0, 'x'},
 			{"y",    required_argument, 0, 'y'},
 			{"keep", no_argument,       0, 'k'},
+			{"mode", required_argument, 0, 'm'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "hx:y:k", long_options, NULL);
+		c = getopt_long(argc, argv, "hx:y:km:", long_options, NULL);
 
 		if (c == -1)
 			break;
@@ -200,6 +228,19 @@ int main(int argc, char* argv[]) {
 
 			case 'k':
 				keep_size = true;
+				break;
+
+			case 'm':
+				if(strcmp(optarg, "indexed") == 0) {
+					mode = MODE_INDEXED;
+				} else if(strcmp(optarg, "24bit") == 0) {
+					mode = MODE_24_BIT;
+				} else if(strcmp(optarg, "both") == 0) {
+					mode = MODE_BOTH;
+				} else {
+					printf("Mode must be one of 'indexed', '24bit', or 'both'.\n");
+					exit(1);
+				}
 				break;
 
 			case '?':
@@ -287,7 +328,7 @@ int main(int argc, char* argv[]) {
 			for (int w = 0; w < width; w++) {
 				imlib_image_query_pixel(w, h + 1, &pixel1);
 				imlib_image_query_pixel(w, h, &pixel2);
-				print_pixels(&pixel1, &pixel2);
+				print_pixels(&pixel1, &pixel2, mode);
 			}
 			printf("\x1b[0m\n");
 		}
