@@ -145,7 +145,7 @@ void print_pixels(Imlib_Color* p1, Imlib_Color* p2, int mode) {
 	static char* lower = "▄";
 	if (p1->alpha == 0 && p2->alpha == 0) {
 		// Both pixels are transparent
-		printf(" ");
+		printf("\x1b[0m ");
 	} else if (p1->alpha == 0 && p2->alpha != 0) {
 		// Only lower pixel is transparent
 		fputs("\x1b[0m", stdout);
