@@ -1,5 +1,5 @@
 /*
-icat -- Outputs an image on a 256-color enabled terminal with UTF-8 locale
+icat -- Outputs an image on a 256-color or 24 bit color enabled terminal with UTF-8 locale
 Andreas Textor <textor.andreas@googlemail.com>
 
 Compile: gcc -Wall -pedantic -std=c99 -D_BSD_SOURCE -o icat icat.c -lImlib2
@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/ioctl.h>
 #include <Imlib2.h>
 
-#define VERSION "0.3.1"
+#define VERSION "0.4"
 
 enum {MODE_NOTHING, MODE_INDEXED, MODE_24_BIT, MODE_BOTH};
 

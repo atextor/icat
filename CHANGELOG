@@ -6,4 +6,10 @@ Version 0.3:
 	Automatically resizes big images to terminal width
 	Added -k|--keep option to prevent automatic resizing
 	Support for transparency in images
+Version 0.3.1:
+	Added support for multiple file arguments
+Version 0.4:
+	Added support for 24-bit output of images
+		(Terminal emulators known to work: Konsole and Yakuake,
+		 Terminal emulators known not to work: urxvt, xterm, gnome-terminal)
 
