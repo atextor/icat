@@ -1,6 +1,6 @@
 icat - image cat
 ================
-Outputs an image on a 256-color enabled terminal with UTF-8 locale,
+Outputs an image on a 256-color or 24-bit color enabled terminal with UTF-8 locale,
 such as gnome-terminal, konsole or rxvt-unicode (urxvt).
 
 Building
@@ -41,6 +41,10 @@ ANSI escape codes that encode the colors):
 [0m[38;5;25m▀[38;5;25m[48;5;74m▄[38;5;117m[48;5;117m▄[38;5;153m[48;5;117m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;117m▄[38;5;117m[48;5;117m▄[38;5;61m[48;5;74m▄[0m[38;5;24m▀[0m
  [0m[38;5;25m▀[38;5;24m[48;5;68m▄[38;5;68m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;153m[48;5;153m▄[38;5;68m[48;5;153m▄[38;5;24m[48;5;68m▄[0m[38;5;18m▀ [0m
    [0m[38;5;18m▀[0m[38;5;61m▀[38;5;18m[48;5;110m▄[38;5;25m[48;5;153m▄[38;5;61m[48;5;153m▄[38;5;61m[48;5;153m▄[38;5;25m[48;5;153m▄[38;5;24m[48;5;110m▄[0m[38;5;61m▀[0m[38;5;18m▀   [0m
+
+For terminals that support 24-bit color (only Konsole and Yakuake are known to the authors at the time of this writing), this can be enabled using:
+
+	icat -m 24bit sample.png
 
 
 Author
