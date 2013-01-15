@@ -110,7 +110,7 @@ void print_usage() {
 			"	-k | --keep  -- Keep image size, i.e. do not automatically resize image to fit\n"
 			"	                the terminal width.\n"
 			"	-m | --mode indexed|24bit|both\n"
-			"	             -- Use indexed (256-color), 24-bit color, or both (the default).\n"
+			"	             -- Use indexed (256-color, the default), 24-bit color, or both.\n"
 			"	imagefile    -- The image to print. If the file name is \"-\", the file is\n"
 			"	                read from stdin.\n"
 			"Big images are automatically resized to your terminal width, unless with the -k option.\n"
@@ -190,7 +190,7 @@ int main(int argc, char* argv[]) {
 	unsigned int y = 0;
 	int c;
 	bool keep_size = false;
-	int mode = MODE_BOTH;
+	int mode = MODE_INDEXED;
 
 	for(;;) {
 		static struct option long_options[] = {
