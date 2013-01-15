@@ -105,7 +105,7 @@ void print_usage() {
 			"Usage: icat [-h|--help] [-x value] [-y value] [-k|--keep] imagefile [imagefile...]\n"
 			"	-h | --help  -- Display this message\n"
 			"	-x value     -- Specify the column to print the image in (min. 1)\n"
-			"	-y value     -- Specify the row to print the image in (min 1.)\n"
+			"	-y value     -- Specify the row to print the image in (min. 1)\n"
 			"	                This is ignored when more than one image is printed.\n"
 			"	-k | --keep  -- Keep image size, i.e. do not automatically resize image to fit\n"
 			"	                the terminal width.\n"
