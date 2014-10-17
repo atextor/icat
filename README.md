@@ -37,7 +37,7 @@ The above commands results the following output in 256-color terminal, see [`sam
 
 ![Output of sample.png](sample.256-color.png)
 
-For terminals that support 24-bit color (only Konsole and Yakuake are known to the authors at the time of this writing), this can be enabled using:
+For terminals that support 24-bit color (such as Konsole and Yakuake, see [this document](https://gist.github.com/XVilka/8346728) for more information about terminals and their color support), this can be enabled using:
 
 	icat -m 24bit sample.png
 
