@@ -1,0 +1,31 @@
+.TH ICAT 1 2017-10-20
+.SH NAME
+icat - display images in terminal
+.SH SYNOPSIS
+\fBicat\fR \fI[OPTION]\fR... \fIFILE\fR...
+.SH DESCRIPTION
+\fBicat\fR outputs images on 256-color terminals with UTF-8 locale.
+It can also display images in 24-bit color mode, for terminals which support it.
+.PP
+You can specify multiple images to be displayed.
+If you use "\fB-\fR" as the filename, the image will be read from standard input.
+.SH OPTIONS
+.TP
+\fB\-h\fR \fB\-\-help\fR
+Display a help screen and exit.
+.TP
+\fB\-k\fR \fB\-\-keep\fR
+Do not automatically resize larger images to fit in terminal width.
+.TP
+\fB\-m\fR \fB\-\-mode\fR <\fIindexed\fR, \fI24bit\fR, \fIboth\fR>
+Use indexed mode (256-color, the default), 24-bit color, or both.
+.TP
+\fB\-x\fR \fICOLUMNS\fR
+Specifies how many terminal columns to use (controls width of output).
+.TP
+\fB\-y\fR \fIROWS\fR
+Specifies how many terminal rows to use (controls height of output).
+.SH LICENCE
+This program is made available under the terms of the BSD (2-clause) licence.
+.SH AUTHOR
+Copyright 2012-2017 by \fBAndreas Textor\fR.
