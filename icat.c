@@ -144,7 +144,7 @@ void resize_image_if_necessary(int *width, int *height, const int user_width) {
 	int resized_width;
 
 	if(!user_width) {
-		int cols = terminal_width() - 1;
+		int cols = terminal_width();
 		if(cols > *width) return;
 
 		resized_width = cols;
