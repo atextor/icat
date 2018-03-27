@@ -107,6 +107,9 @@ void print_usage() {
 			"	-x value     -- Specify the column to print the image in (min. 1)\n"
 			"	-y value     -- Specify the row to print the image in (min. 1)\n"
 			"	                This is ignored when more than one image is printed.\n"
+			"       -w | --width <columns>\n"
+			"                       Instead of resizing the image to fit the terminal width,\n"
+			"                       use the provided value as the desired width.\n"
 			"	-k | --keep  -- Keep image size, i.e. do not automatically resize image to fit\n"
 			"	                the terminal width.\n"
 			"	-m | --mode indexed|24bit|both\n"
@@ -188,6 +191,7 @@ int main(int argc, char* argv[]) {
 	Imlib_Image image = NULL;
 	unsigned int x = 0;
 	unsigned int y = 0;
+	unsigned int user_w = 0;
 	int c;
 	bool keep_size = false;
 	int mode = MODE_INDEXED;
@@ -197,12 +201,13 @@ int main(int argc, char* argv[]) {
 			{"help", no_argument,       &display_help, 1},
 			{"x",    required_argument, 0, 'x'},
 			{"y",    required_argument, 0, 'y'},
+			{"width",required_argument, 0, 'w'},
 			{"keep", no_argument,       0, 'k'},
 			{"mode", required_argument, 0, 'm'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "hx:y:km:", long_options, NULL);
+		c = getopt_long(argc, argv, "hx:y:w:km:", long_options, NULL);
 
 		if (c == -1)
 			break;
@@ -219,6 +224,14 @@ int main(int argc, char* argv[]) {
 				y = atoi(optarg);
 				if (y < 0) {
 					y = 0;
+				}
+				break;
+
+			case 'w':
+				user_w = atoi(optarg);
+				if(user_w < 1) {
+					printf("Image width must be larger than 0\n");
+					exit(1);
 				}
 				break;
 
@@ -296,8 +309,8 @@ int main(int argc, char* argv[]) {
 		// Find out terminal size and resize image to fit, if necessary
 		if (!keep_size) {
 			int cols = terminal_width();
-			if (cols < width - 1) {
-				int resized_width = cols - 1;
+			if (cols < width - 1 || user_w) {
+				int resized_width = user_w ? user_w : cols - 1;
 				int resized_height = (int)(height * ((float)resized_width / width)); 
 				Imlib_Image resized_image = imlib_create_cropped_scaled_image(0, 0,
 						width, height, resized_width, resized_height);
