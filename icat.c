@@ -138,6 +138,32 @@ int terminal_width() {
 	return cols;
 }
 
+// Resize image, but only if the user explicitly provided the image width,
+// or the image wouldn't fit in the terminal.
+void resize_image_if_necessary(int *width, int *height, const int user_width) {
+	int resized_width;
+
+	if(!user_width) {
+		int cols = terminal_width() - 1;
+		if(cols > *width) return;
+
+		resized_width = cols;
+	} else {
+		resized_width = user_width;
+	}
+
+	float ratio = ((float)resized_width) / *width;
+	int resized_height = *height * ratio;
+
+	Imlib_Image resized_image = imlib_create_cropped_scaled_image(0, 0,
+			*width, *height, resized_width, resized_height);
+	imlib_free_image_and_decache();
+	imlib_context_set_image(resized_image);
+
+	*width = resized_width;
+	*height = resized_height;
+}
+
 // Prints two pixels inside one character, p1 below p2.
 // Characters in terminal fonts are usually twice as high
 // as they are wide.
@@ -306,19 +332,9 @@ int main(int argc, char* argv[]) {
 		int width = imlib_image_get_width();
 		int height = imlib_image_get_height();
 
-		// Find out terminal size and resize image to fit, if necessary
+		// Unless told to retain image size, check if resize if needed
 		if (!keep_size) {
-			int cols = terminal_width();
-			if (cols < width - 1 || user_w) {
-				int resized_width = user_w ? user_w : cols - 1;
-				int resized_height = (int)(height * ((float)resized_width / width)); 
-				Imlib_Image resized_image = imlib_create_cropped_scaled_image(0, 0,
-						width, height, resized_width, resized_height);
-				imlib_free_image_and_decache();
-				imlib_context_set_image(resized_image);
-				width = resized_width;
-				height = resized_height;
-			}
+			resize_image_if_necessary(&width, &height, user_w);
 		}
 
 		// If an y-value is given, position the cursor in that line (and
