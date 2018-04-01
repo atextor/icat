@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/ioctl.h>
 #include <Imlib2.h>
 
-#define VERSION "0.4"
+#define VERSION "0.5"
 
 enum {MODE_NOTHING, MODE_INDEXED, MODE_24_BIT, MODE_BOTH};
 
