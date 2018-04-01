@@ -77,7 +77,7 @@ static uint32_t colors[] = {
 	// >= 233: Grey ramp
 	0x000000, 0x121212, 0x1c1c1c, 0x262626, 0x303030, 0x3a3a3a, 0x444444, 0x4e4e4e,
 	0x585858, 0x626262, 0x6c6c6c, 0x767676, 0x808080, 0x8a8a8a, 0x949494, 0x9e9e9e,
-	0xa8a8a8, 0xb2b2b2, 0xbcbcbc, 0xc6c6c6, 0xd0d0d0, 0xdadada, 
+	0xa8a8a8, 0xb2b2b2, 0xbcbcbc, 0xc6c6c6, 0xd0d0d0, 0xdadada,
 };
 
 // Find an xterm color value that matches an ARGB color
@@ -107,9 +107,9 @@ void print_usage() {
 			"	-x value     -- Specify the column to print the image in (min. 1)\n"
 			"	-y value     -- Specify the row to print the image in (min. 1)\n"
 			"	                This is ignored when more than one image is printed.\n"
-			"       -w | --width <columns>\n"
-			"                       Instead of resizing the image to fit the terminal width,\n"
-			"                       use the provided value as the desired width.\n"
+			"	-w | --width <columns>\n"
+			"	                Instead of resizing the image to fit the terminal width,\n"
+			"	                use the provided value as the desired width.\n"
 			"	-k | --keep  -- Keep image size, i.e. do not automatically resize image to fit\n"
 			"	                the terminal width.\n"
 			"	-m | --mode indexed|24bit|both\n"
@@ -143,7 +143,7 @@ int terminal_width() {
 void resize_image_if_necessary(int *width, int *height, const int user_width) {
 	int resized_width;
 
-	if(!user_width) {
+	if (!user_width) {
 		int cols = terminal_width();
 		if(cols > *width) return;
 
@@ -342,7 +342,7 @@ int main(int argc, char* argv[]) {
 		if (y > 0) {
 			printf("\x1b[%d;%dH", y, x);
 		}
-		
+
 		Imlib_Color pixel1;
 		Imlib_Color pixel2;
 		for (int h = 0; h < height; h += 2) {
@@ -366,4 +366,3 @@ int main(int argc, char* argv[]) {
 	}
 	return 0;
 }
-
