@@ -306,9 +306,9 @@ int main(int argc, char* argv[]) {
 		// Read from stdin and write temp file. Although a temp file
 		// is ugly, imlib can not seek in a pipe and therefore not
 		// read an image from it.
+		char tempfile_name[] = "/tmp/icatXXXXXX";
 		if (strcmp(argv[i], "-") == 0) {
 			int tempfile;
-			char tempfile_name[] = "/tmp/icatXXXXXX";
 			if ((tempfile = mkstemp(tempfile_name)) < 0) {
 				perror("mkstemp");
 				exit(EXIT_FAILURE);
