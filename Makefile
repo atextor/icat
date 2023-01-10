@@ -1,6 +1,6 @@
 CC?=gcc
-CFLAGS+=-Wall -pedantic -std=c99 -D_BSD_SOURCE
 LDFLAGS+=-lImlib2
+CFLAGS+=-Wall -pedantic -std=c99 -D_DEFAULT_SOURCE
 PROG=icat
 MODS=icat.o
 
