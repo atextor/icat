@@ -12,7 +12,9 @@ On Ubuntu, `apt-get install libimlib2-dev`
 
 On Darwin (Mac OS X), `brew install imlib2`
 
-Note that for Darwin (Mac OS X), you will need to install [XQuartz](http://xquartz.macosforge.org/landing/) first, the version of the X.Org X Window System (X11) that runs on OS X.
+Note that for Darwin (Mac OS X), you will also first need to install:
+* [XQuartz](http://xquartz.macosforge.org/landing/), the version of the X.Org X Window System (X11) that runs on OS X. (`brew install xquartz`)
+* [pkgconf](https://github.com/pkgconf/pkgconf). (`brew install pkgconf`)
 
 To compile:
 
